@@ -53,7 +53,7 @@ class DynectDNSClient:
         return True
 
     @defaultDomain
-    def deleteRecord(self, data, hostName, recordType="A", domainName=None):
+    def deleteRecord(self, hostName, recordType="A", domainName=None):
         data = self.getRecords(hostName, recordType, domainName)
         if not data:
             return False
