@@ -1,6 +1,8 @@
 import urllib2
 import json
 
+__version__ = (0, 0, 1)
+
 class DynectDNSClient:
     def __init__(self, customerName, userName, password, defaultDomain=None):
         self.customerName = customerName
