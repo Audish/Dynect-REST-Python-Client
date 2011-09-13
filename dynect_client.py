@@ -40,11 +40,11 @@ class DynectDNSClient(object):
 
     @defaultDomain
     def getRecords(self, hostName, recordType="ANY", domainName=None):
-        return self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName), None)['data']
+        return self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName))['data']
 
     @defaultDomain
     def getRecord(self, hostName, recordID, recordType, domainName=None):
-        return self._request('%sRecord/%s/%s/%s/' % (recordType, domainName, hostName, recordID), None)
+        return self._request('%sRecord/%s/%s/%s/' % (recordType, domainName, hostName, recordID))
 
     @defaultDomain
     def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
@@ -89,7 +89,7 @@ class DynectDNSClient(object):
             raise LoginFailure(response)
         self.sessionToken = response['data']['token']
 
-    def _request(self, url, post, method=None):
+    def _request(self, url, post=None, method=None):
         fullurl = API_BASE_URL + url
         if self.debug:
             print fullurl
