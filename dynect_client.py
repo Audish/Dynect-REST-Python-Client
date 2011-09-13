@@ -118,11 +118,10 @@ class DynectDNSClient(object):
 
         try:
             resp = urllib2.urlopen(req)
-            if method:
-                return resp
-            else:
+            if resp.headers['content-type'] == 'application/json':
                 return json.loads(resp.read())
-
+            else:
+                return resp.read()
         except urllib2.HTTPError, error:
             raise DynectException(error)
 
