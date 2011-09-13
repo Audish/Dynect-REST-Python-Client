@@ -50,9 +50,7 @@ class DynectDNSClient(object):
     def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
         if isinstance(data, basestring):
             data = self.convertToAPIMapping(recordType, data)
-        data['ttl'] = str(TTL)
-
-        self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), data)
+        self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), dict(ttl=str(TTL), rdata=data))
         self.considerAutoPublish(domainName)
 
     @defaultDomain
@@ -96,6 +94,8 @@ class DynectDNSClient(object):
 
         if post:
             postdata = json.dumps(post)
+            if self.debug:
+                print postdata
             req = MethodRequest(fullurl, postdata)
         else:
             req = MethodRequest(fullurl)
