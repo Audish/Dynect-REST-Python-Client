@@ -69,6 +69,11 @@ class DynectDNSClient(object):
         self._request(url, None, "DELETE")
         self.considerAutoPublish(domainName)
 
+    @defaultDomain
+    def deleteNode(self, nodeName, domainName=None):
+        return self._request("Node/%s/%s/" % (domainName, nodeName), method='DELETE')
+        self.considerAutoPublish(domainName)
+
     def convertToAPIMapping(self, recordType, data):
         if recordType not in API_FIELDNAMES:
             raise NotImplementedError("not familiar with %s records" % (recordType,))
