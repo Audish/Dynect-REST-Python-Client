@@ -44,12 +44,19 @@ class DynectDNSClient(object):
     def getRecord(self, hostName, recordID, recordType, domainName=None):
         return self._request('%sRecord/%s/%s/%s/' % (recordType, domainName, hostName, recordID))
 
-    @defaultDomain
-    def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
+    def _modifyRecord(self, method, data, hostName, recordType, TTL, domainName):
         if isinstance(data, basestring):
             data = self.convertToAPIMapping(recordType, data)
-        self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), dict(ttl=str(TTL), rdata=data))
+        self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), dict(ttl=str(TTL), rdata=data), method)
         self.considerAutoPublish(domainName)
+
+    @defaultDomain
+    def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
+        self._modifyRecord('POST', data, hostName, recordType, TTL, domainName)
+
+    @defaultDomain
+    def updateRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
+        self._modifyRecord('PUT', data, hostName, recordType, TTL, domainName)
 
     @defaultDomain
     def deleteRecord(self, hostName, recordType="A", domainName=None):
