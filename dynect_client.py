@@ -29,6 +29,7 @@ class DynectDNSClient(object):
         self.defaultDomain = defaultDomain
         self.autoPublish = autoPublish
         self.sessionToken = None
+        self.debug = False
 
     def defaultDomain(wrapped):
         @wraps(wrapped)
@@ -90,6 +91,8 @@ class DynectDNSClient(object):
 
     def _request(self, url, post, method=None):
         fullurl = API_BASE_URL + url
+        if self.debug:
+            print fullurl
 
         if post:
             postdata = json.dumps(post)
