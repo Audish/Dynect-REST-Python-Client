@@ -12,7 +12,7 @@ __version__ = (0, 0, 1)
 API_FIELDNAMES = dict(A='address', CNAME='cname')
 API_BASE_URL = "https://api2.dynect.net/REST/"
 
-class DynectDNSClient:
+class DynectDNSClient(object):
     def __init__(self, customerName, userName, password, defaultDomain=None, autoPublish=True):
         self.customerName = customerName
         self.userName = userName
