@@ -5,11 +5,12 @@ from functools import wraps
 __version__ = (0, 0, 1)
 
 class DynectDNSClient:
-    def __init__(self, customerName, userName, password, defaultDomain=None):
+    def __init__(self, customerName, userName, password, defaultDomain=None, autoPublish=True):
         self.customerName = customerName
         self.userName = userName
         self.password = password
         self.defaultDomain = defaultDomain
+        self.autoPublish = autoPublish
         self.sessionToken = None
 
     def defaultDomain(wrapped):
@@ -41,7 +42,7 @@ class DynectDNSClient:
         if response['status'] != 'success':
             return False
 
-        response = self._publish(domainName)
+        response = self.considerAutoPublish(domainName)
         return True
 
     @defaultDomain
@@ -54,7 +55,7 @@ class DynectDNSClient:
         url = url.replace("/REST/", "")
         try:
             self._request(url, None, "DELETE")
-            self._publish(domainName)
+            self.considerAutoPublish(domainName)
         except:
             return False
 
@@ -66,8 +67,12 @@ class DynectDNSClient:
         else:
             return ("CNameRecord", "cname")
 
+    def considerAutoPublish(self, domainName=None):
+        if self.autoPublish:
+            self.publish(domainName=domainName)
+
     @defaultDomain
-    def _publish(self, domainName=None):
+    def publish(self, domainName=None):
         self._request("Zone/%s" % domainName, {"publish": True}, type="PUT")
 
     def _login(self):
