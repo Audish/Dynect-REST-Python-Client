@@ -4,6 +4,13 @@ from functools import wraps
 
 __version__ = (0, 0, 1)
 
+# NOTE: When receiving POST/PUT rdata, the API expects certain fields depending on the record type; hence operations
+#       like addRecord will accept JSON serializable dict-like data, and send it to the server. However, to make
+#       everyone's life easier, if these methods receive string data, they will try to convert it to a single-argument
+#       dict using the field name fetched from the table below. In other words, if you want to support more record
+#       types that receive just a single rdata argument, add them to this dict.
+API_FIELDNAMES = dict(A='address', CNAME='cname')
+
 class DynectDNSClient:
     def __init__(self, customerName, userName, password, defaultDomain=None, autoPublish=True):
         self.customerName = customerName
@@ -33,12 +40,11 @@ class DynectDNSClient:
 
     @defaultDomain
     def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
-        url, fieldName = self._api_details(recordType)
-        url = "%s/%s/%s/" % (url, domainName, hostName)
-        data = {"ttl": str(TTL),
-                        "rdata": { fieldName: data }}
+        if isinstance(data, basestring):
+            data = self.convertToAPIMapping(recordType, data)
+        data['ttl'] = str(TTL)
 
-        response = self._request(url, data)
+        response = self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), data)
         if response['status'] != 'success':
             return False
 
@@ -61,11 +67,12 @@ class DynectDNSClient:
 
         return True
 
-    def _api_details(self, recordType):
-        if recordType == "A":
-            return ("ARecord", "address")
-        else:
-            return ("CNameRecord", "cname")
+    def convertToAPIMapping(self, recordType, data):
+        if recordType not in API_FIELDNAMES:
+            raise NotImplementedError("not familiar with %s records" % (recordType,))
+        if API_FIELDNAMES[recordType] is None:
+            raise TypeError("%s records have more than one argument and must receive map data" % (recordType,))
+        return {API_FIELDNAMES[recordType]: data}
 
     def considerAutoPublish(self, domainName=None):
         if self.autoPublish:
