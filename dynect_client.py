@@ -21,9 +21,9 @@ class DynectDNSClient:
         return wrapper
 
     @defaultDomain
-    def getRecords(self, hostName, type="A", domainName=None):
+    def getRecords(self, hostName, recordType="ANY", domainName=None):
         try:
-            response = self._request('ANYRecord/%s/%s/' % (domainName, hostName), None)
+            response = self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName), None)
             return response['data']
         except urllib2.HTTPError, e:
             if e.code == 404:
@@ -32,8 +32,8 @@ class DynectDNSClient:
                 raise e
 
     @defaultDomain
-    def addRecord(self, data, hostName, type="A", TTL=3600, domainName=None):
-        url, fieldName = self._api_details(type)
+    def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
+        url, fieldName = self._api_details(recordType)
         url = "%s/%s/%s/" % (url, domainName, hostName)
         data = {"ttl": str(TTL),
                         "rdata": { fieldName: data }}
@@ -46,8 +46,8 @@ class DynectDNSClient:
         return True
 
     @defaultDomain
-    def deleteRecord(self, data, hostName, type="A", domainName=None):
-        data = self.getRecords(hostName, type, domainName)
+    def deleteRecord(self, data, hostName, recordType="A", domainName=None):
+        data = self.getRecords(hostName, recordType, domainName)
         if not data:
             return False
 
@@ -61,8 +61,8 @@ class DynectDNSClient:
 
         return True
 
-    def _api_details(self, type):
-        if type == "A":
+    def _api_details(self, recordType):
+        if recordType == "A":
             return ("ARecord", "address")
         else:
             return ("CNameRecord", "cname")
@@ -73,7 +73,7 @@ class DynectDNSClient:
 
     @defaultDomain
     def publish(self, domainName=None):
-        self._request("Zone/%s" % domainName, {"publish": True}, type="PUT")
+        self._request("Zone/%s" % domainName, {"publish": True}, method="PUT")
 
     def _login(self):
         response = self._request("Session/", {'customer_name': self.customerName,
@@ -83,7 +83,7 @@ class DynectDNSClient:
             return
         self.sessionToken = response['data']['token']
 
-    def _request(self, url, post, type=None):
+    def _request(self, url, post, method=None):
         fullurl = "https://api2.dynect.net/REST/%s" % url
 
         if post:
@@ -94,12 +94,12 @@ class DynectDNSClient:
 
         req.add_header('Content-Type', 'application/json')
         req.add_header('Auth-Token', self.sessionToken)
-        if type:
-            setattr(req, "method", type)
+        if method:
+            req.method = method
 
         try:
             resp = urllib2.urlopen(req)
-            if type:
+            if method:
                 return resp
             else:
                 return json.loads(resp.read())
