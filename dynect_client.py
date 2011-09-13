@@ -1,5 +1,6 @@
 import urllib2
 import json
+from functools import wraps
 
 __version__ = (0, 0, 1)
 
@@ -8,13 +9,18 @@ class DynectDNSClient:
         self.customerName = customerName
         self.userName = userName
         self.password = password
-        self.defaultDomainName = defaultDomain
+        self.defaultDomain = defaultDomain
         self.sessionToken = None
 
-    def getRecords(self, hostName, type="A", domainName=None):
-        if not domainName:
-            domainName = self.defaultDomainName
+    def defaultDomain(wrapped):
+        @wraps(wrapped)
+        def wrapper(self, *args, **kwargs):
+            kwargs['domainName'] = kwargs.get('domainName') or self.defaultDomain
+            return wrapped(self, *args, **kwargs)
+        return wrapper
 
+    @defaultDomain
+    def getRecords(self, hostName, type="A", domainName=None):
         try:
             response = self._request('ANYRecord/%s/%s/' % (domainName, hostName), None)
             return response['data']
@@ -24,12 +30,9 @@ class DynectDNSClient:
             else:
                 raise e
 
+    @defaultDomain
     def addRecord(self, data, hostName, type="A", TTL=3600, domainName=None):
         url, fieldName = self._api_details(type)
-
-        if not domainName:
-            domainName = self.defaultDomainName
-
         url = "%s/%s/%s/" % (url, domainName, hostName)
         data = {"ttl": str(TTL),
                         "rdata": { fieldName: data }}
@@ -41,10 +44,8 @@ class DynectDNSClient:
         response = self._publish(domainName)
         return True
 
+    @defaultDomain
     def deleteRecord(self, data, hostName, type="A", domainName=None):
-        if not domainName:
-            domainName = self.defaultDomainName
-
         data = self.getRecords(hostName, type, domainName)
         if not data:
             return False
@@ -65,8 +66,7 @@ class DynectDNSClient:
         else:
             return ("CNameRecord", "cname")
 
-
-
+    @defaultDomain
     def _publish(self, domainName=None):
         self._request("Zone/%s" % domainName, {"publish": True}, type="PUT")
 
