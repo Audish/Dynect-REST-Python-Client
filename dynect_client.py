@@ -12,6 +12,15 @@ __version__ = (0, 0, 1)
 API_FIELDNAMES = dict(A='address', CNAME='cname')
 API_BASE_URL = "https://api2.dynect.net/REST/"
 
+class DynectException(Exception):
+    def __init__(self, original):
+        self.original = original
+class NotFound(DynectException):
+    pass
+class LoginFailure(DynectException):
+    def __init__(self, response):
+        self.response = response
+
 class DynectDNSClient(object):
     def __init__(self, customerName, userName, password, defaultDomain=None, autoPublish=True):
         self.customerName = customerName
@@ -30,14 +39,7 @@ class DynectDNSClient(object):
 
     @defaultDomain
     def getRecords(self, hostName, recordType="ANY", domainName=None):
-        try:
-            response = self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName), None)
-            return response['data']
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                return None
-            else:
-                raise e
+        return self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName), None)['data']
 
     @defaultDomain
     def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
@@ -45,12 +47,8 @@ class DynectDNSClient(object):
             data = self.convertToAPIMapping(recordType, data)
         data['ttl'] = str(TTL)
 
-        response = self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), data)
-        if response['status'] != 'success':
-            return False
-
-        response = self.considerAutoPublish(domainName)
-        return True
+        self._request("%sRecord/%s/%s/" % (recordType, domainName, hostName), data)
+        self.considerAutoPublish(domainName)
 
     @defaultDomain
     def deleteRecord(self, hostName, recordType="A", domainName=None):
@@ -60,13 +58,8 @@ class DynectDNSClient(object):
 
         url = data[0]
         url = url.replace("/REST/", "")
-        try:
-            self._request(url, None, "DELETE")
-            self.considerAutoPublish(domainName)
-        except:
-            return False
-
-        return True
+        self._request(url, None, "DELETE")
+        self.considerAutoPublish(domainName)
 
     def convertToAPIMapping(self, recordType, data):
         if recordType not in API_FIELDNAMES:
@@ -88,7 +81,7 @@ class DynectDNSClient(object):
                                               'user_name': self.userName,
                                               'password': self.password})
         if response['status'] != 'success':
-            return
+            raise LoginFailure(response)
         self.sessionToken = response['data']['token']
 
     def _request(self, url, post, method=None):
@@ -112,12 +105,13 @@ class DynectDNSClient(object):
             else:
                 return json.loads(resp.read())
 
-        except urllib2.HTTPError, e:
-            if e.code == 400:
+        except urllib2.HTTPError, error:
+            if error.code == 400:
                 self._login()
                 return self._request(url, post)
-            else:
-                raise e
+            elif error.code == 404:
+                raise NotFound(error)
+            raise DynectException(error)
 
 class MethodRequest(urllib2.Request):
     def __init__(self, *args, **kwargs):
