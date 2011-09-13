@@ -42,6 +42,10 @@ class DynectDNSClient(object):
         return self._request('%sRecord/%s/%s/' % (recordType, domainName, hostName), None)['data']
 
     @defaultDomain
+    def getRecord(self, hostName, recordID, recordType, domainName=None):
+        return self._request('%sRecord/%s/%s/%s/' % (recordType, domainName, hostName, recordID), None)
+
+    @defaultDomain
     def addRecord(self, data, hostName, recordType="A", TTL=3600, domainName=None):
         if isinstance(data, basestring):
             data = self.convertToAPIMapping(recordType, data)
