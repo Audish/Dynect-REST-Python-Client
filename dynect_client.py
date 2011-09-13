@@ -15,8 +15,6 @@ API_BASE_URL = "https://api2.dynect.net/REST/"
 class DynectException(Exception):
     def __init__(self, original):
         self.original = original
-class NotFound(DynectException):
-    pass
 class LoginFailure(DynectException):
     def __init__(self, response):
         self.response = response
@@ -119,8 +117,6 @@ class DynectDNSClient(object):
                 return json.loads(resp.read())
 
         except urllib2.HTTPError, error:
-            if error.code == 400:
-                raise NotFound(error)
             raise DynectException(error)
 
 class MethodRequest(urllib2.Request):
