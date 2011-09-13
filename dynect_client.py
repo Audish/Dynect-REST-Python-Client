@@ -10,6 +10,7 @@ __version__ = (0, 0, 1)
 #       dict using the field name fetched from the table below. In other words, if you want to support more record
 #       types that receive just a single rdata argument, add them to this dict.
 API_FIELDNAMES = dict(A='address', CNAME='cname')
+API_BASE_URL = "https://api2.dynect.net/REST/"
 
 class DynectDNSClient:
     def __init__(self, customerName, userName, password, defaultDomain=None, autoPublish=True):
@@ -91,7 +92,7 @@ class DynectDNSClient:
         self.sessionToken = response['data']['token']
 
     def _request(self, url, post, method=None):
-        fullurl = "https://api2.dynect.net/REST/%s" % url
+        fullurl = API_BASE_URL + url
 
         if post:
             postdata = json.dumps(post)
