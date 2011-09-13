@@ -80,14 +80,20 @@ class DynectDNSClient(object):
         self._request("Zone/%s" % domainName, {"publish": True}, method="PUT")
 
     def _login(self):
-        response = self._request("Session/", {'customer_name': self.customerName,
-                                              'user_name': self.userName,
-                                              'password': self.password})
+        self.sessionToken = ''
+        try:
+            response = self._request("Session/", {'customer_name': self.customerName,
+                                                  'user_name': self.userName,
+                                                  'password': self.password})
+        finally:
+            self.sessionToken = None
         if response['status'] != 'success':
             raise LoginFailure(response)
         self.sessionToken = response['data']['token']
 
     def _request(self, url, post=None, method=None):
+        if self.sessionToken is None:
+            self._login()
         fullurl = API_BASE_URL + url
         if self.debug:
             print fullurl
@@ -114,9 +120,6 @@ class DynectDNSClient(object):
 
         except urllib2.HTTPError, error:
             if error.code == 400:
-                self._login()
-                return self._request(url, post)
-            elif error.code == 404:
                 raise NotFound(error)
             raise DynectException(error)
 
