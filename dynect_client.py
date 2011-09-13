@@ -1,4 +1,5 @@
-import simplejson, urllib2, urllib
+import urllib2
+import json
 
 class DynectDNSClient:
   def __init__(self, customerName, userName, password, defaultDomain=None):
@@ -79,7 +80,7 @@ class DynectDNSClient:
     fullurl = "https://api2.dynect.net/REST/%s" % url
 
     if post:
-      postdata = simplejson.dumps(post)
+      postdata = json.dumps(post)
       req = MethodRequest(fullurl, postdata)
     else:
       req = MethodRequest(fullurl)
@@ -94,7 +95,7 @@ class DynectDNSClient:
       if type:
         return resp
       else:
-        return simplejson.loads(resp.read())
+        return json.loads(resp.read())
 
     except urllib2.HTTPError, e:
       if e.code == 400:
